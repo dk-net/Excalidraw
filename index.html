@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DrawBoard Pro - Aplikacja do rysowania</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="toolbar">
+            <div class="separator"></div>
+
+            <!-- Google Drive Integration -->
+            <button id="googleDriveLogin" class="tool-btn export-btn" title="Połącz z Google Drive">
+                <svg width="16" height="16" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M6.28 3l5.72 9.94L18.28 3H6.28zM21 14.66L18.28 19H9.72L12 14.66H21zM3 14.66L5.72 19h4.56L7 14.66H3z"/>
+                </svg>
+                Drive
+            </button>
+            <button id="saveToCloud" class="tool-btn export-btn" title="Zapisz w chmurze" disabled>
+                Zapisz ☁️
+            </button>
+            <button id="loadFromCloud" class="tool-btn export-btn" title="Wczytaj z chmury" disabled>
+                Wczytaj ☁️
+            </button>
+
+            <button id="rectangleTool" class="tool-btn active" data-tool="rectangle" title="Prostokąt">
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                    <rect x="2" y="2" width="16" height="12" fill="none" stroke="currentColor" stroke-width="2" />
+                </svg>
+            </button>
+            <button id="circleTool" class="tool-btn" data-tool="circle" title="Koło/Elipsa">
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                    <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2" />
+                </svg>
+            </button>
+            <button id="lineTool" class="tool-btn" data-tool="line" title="Linia prosta">
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                    <line x1="2" y1="18" x2="18" y2="2" stroke="currentColor" stroke-width="2" />
+                </svg>
+            </button>
+            <button id="dashedLineTool" class="tool-btn" data-tool="dashed-line" title="Linia przerywana">
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                    <line x1="2" y1="10" x2="6" y2="10" stroke="currentColor" stroke-width="2" />
+                    <line x1="8" y1="10" x2="12" y2="10" stroke="currentColor" stroke-width="2" />
+                    <line x1="14" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="2" />
+                </svg>
+            </button>
+            <button id="dottedLineTool" class="tool-btn" data-tool="dotted-line" title="Linia punktowana">
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                    <circle cx="3" cy="10" r="1" fill="currentColor" />
+                    <circle cx="7" cy="10" r="1" fill="currentColor" />
+                    <circle cx="11" cy="10" r="1" fill="currentColor" />
+                    <circle cx="15" cy="10" r="1" fill="currentColor" />
+                </svg>
+            </button>
+            <button id="arrowTool" class="tool-btn" data-tool="arrow" title="Strzałka">
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                    <line x1="2" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="2" />
+                    <polyline points="12,6 16,10 12,14" fill="none" stroke="currentColor" stroke-width="2" />
+                </svg>
+            </button>
+            <button id="freeDrawTool" class="tool-btn" data-tool="freedraw" title="Rysowanie odręczne">
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                    <path d="M4 16 Q7 14, 10 17 Q13 20, 16 6" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" />
+                    <circle cx="4" cy="16" r="1" fill="currentColor" />
+                    <path d="M15 6.5l1.5-2 1 2z" fill="currentColor" />
+                </svg>
+            </button>
+
+            <button id="textTool" class="tool-btn" data-tool="text" title="Tekst">T</button>
+            <button id="selectTool" class="tool-btn" data-tool="select" title="Zaznacz/Przenieś elementy">
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                    <path d="M5 8.5V5a2 2 0 0 1 4 0v5" stroke="currentColor" stroke-width="2" fill="none" />
+                    <path d="M9 10v-4a2 2 0 0 1 4 0v4" stroke="currentColor" stroke-width="2" fill="none" />
+                    <path d="M13 10.5v-2.5a2 2 0 0 1 4 0v6a2 2 0 0 1-2 2h-4.5a2.5 2.5 0 0 1-2.5-2.5V12"
+                        stroke="currentColor" stroke-width="2" fill="none" />
+                    <circle cx="8" cy="16" r="1" fill="currentColor" />
+                </svg>
+            </button>
+
+            <div class="separator"></div>
+
+            <div class="color-palette">
+                <div class="color-option active" data-color="#2E3440" style="background: #2E3440;" title="Ciemny szary">
+                </div>
+                <div class="color-option" data-color="#5E81AC" style="background: #5E81AC;" title="Niebieski"></div>
+                <div class="color-option" data-color="#81A1C1" style="background: #81A1C1;" title="Jasny niebieski">
+                </div>
+                <div class="color-option" data-color="#88C0D0" style="background: #88C0D0;" title="Cyan"></div>
+                <div class="color-option" data-color="#8FBCBB" style="background: #8FBCBB;" title="Miętowy"></div>
+                <div class="color-option" data-color="#A3BE8C" style="background: #A3BE8C;" title="Zielony"></div>
+                <div class="color-option" data-color="#EBCB8B" style="background: #EBCB8B;" title="Żółty"></div>
+                <div class="color-option" data-color="#D08770" style="background: #D08770;" title="Pomarańczowy"></div>
+                <div class="color-option" data-color="#BF616A" style="background: #BF616A;" title="Czerwony"></div>
+                <div class="color-option" data-color="#B48EAD" style="background: #B48EAD;" title="Fioletowy"></div>
+            </div>
+
+            <div class="separator"></div>
+
+            <label class="stroke-control" title="Grubość linii">
+                <span>Grubość:</span>
+                <input type="range" id="strokeWidth" min="1" max="8" value="2">
+                <span id="strokeValue">2</span>
+            </label>
+
+            <div class="separator"></div>
+
+            <label class="opacity-control" title="Przezroczystość elementu">
+                <span>Przezroczystość:</span>
+                <input type="range" id="opacityRange" min="0" max="100" value="100">
+                <span id="opacityValue">100%</span>
+            </label>
+
+            <div class="separator"></div>
+
+            <button id="undoBtn" class="tool-btn" title="Cofnij (Ctrl+Z)">
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                    <path d="M3 7v6h4l-1.5-1.5L9 8h6a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-4" stroke="currentColor"
+                        stroke-width="2" fill="none" />
+                </svg>
+            </button>
+            <button id="redoBtn" class="tool-btn" title="Ponów (Ctrl+Y, Ctrl+Shift+Z)">
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                    <path d="M17 7v6h-4l1.5-1.5L11 8H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h4" stroke="currentColor"
+                        stroke-width="2" fill="none" />
+                </svg>
+            </button>
+
+            <div class="separator"></div>
+
+            <button id="clearCanvas" class="tool-btn clear-btn" title="Wyczyść całą planszę">Wyczyść</button>
+            <button id="exportPNG" class="tool-btn export-btn" title="Eksportuj jako PNG">Eksportuj  PNG</button>
+            <button id="exportSVG" class="tool-btn export-btn" title="Eksportuj jako SVG">Eksportuj SVG</button>
+
+            <div class="zoom-info">
+                Zoom: <span id="zoomLevel">100%</span> | Pan: Shift+przeciągnij lub środkowy przycisk myszy
+            </div>
+
+            <input type="file" id="importSVG" accept=".svg" style="display:none"/>
+            <button id="importSVGBtn" class="tool-btn export-btn" title="Importuj SVG">Import SVG</button>
+
+        </div>
+
+        <div class="canvas-container" id="canvasContainer">
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+
+</body>
+
+</html>
