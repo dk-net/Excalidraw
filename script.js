@@ -35,17 +35,6 @@ class DrawBoard {
         this.isPanning = false;
         this.lastPanPoint = { x: 0, y: 0 };
         this.isMiddleMousePanning = false;
-
-        // Google Drive integration
-        this.isGoogleDriveConnected = false;
-        this.accessToken = null;
-        this.DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-        this.SCOPES = 'https://www.googleapis.com/auth/drive.file';
-        this.FOLDER_NAME = 'DrawBoard Pro Drawings';
-        this.folderId = null;
-
-        this.gapiInited = false;
-        this.gisInited = false;
         
         this.init();
     }
@@ -58,9 +47,6 @@ class DrawBoard {
         this.historyStep = 0;
         this.updateButtons();
         this.redraw();
-
-        // Inicjalizuj Google Drive API
-        this.initGoogleDrive();
     }
     
     setupCanvas() {
@@ -166,20 +152,6 @@ class DrawBoard {
         document.getElementById('clearCanvas').addEventListener('click', () => this.clearCanvas());
         document.getElementById('exportPNG').addEventListener('click', () => this.exportPNG());
         document.getElementById('exportSVG').addEventListener('click', () => this.exportSVG());
-        // Google Drive integration
-        document.getElementById('googleDriveLogin').addEventListener('click', () => {
-            if (!this.isGoogleDriveConnected) {
-                this.loginToGoogleDrive();
-            }
-        });
-
-        document.getElementById('saveToCloud').addEventListener('click', () => {
-            this.saveToGoogleDrive();
-        });
-
-        document.getElementById('loadFromCloud').addEventListener('click', () => {
-            this.loadFromGoogleDrive();
-        });
 
     }
     
@@ -761,13 +733,7 @@ class DrawBoard {
         this.checkIfReady();
     }
 
-    checkIfReady() {
-        if (this.gapiInited && this.gisInited) {
-            console.log('Google APIs ready!');
-            // Opcjonalnie możesz włączyć przyciski
-            this.updateCloudButtons();
-        }
-    }
+
     
     isPointInRectangle(x, y, rect) {
         const minX = Math.min(rect.startX, rect.endX);
@@ -1269,275 +1235,9 @@ class DrawBoard {
         this.saveState();
         this.redraw();
     }
-    // Inicjalizacja Google Drive API
-    async initGoogleDrive() {
-        try {
-            console.log('Inicjalizacja Google Drive API...');
-            console.log('CLIENT_ID:', this.CLIENT_ID);
-            console.log('API_KEY:', this.API_KEY);
-            
-            // Sprawdź czy gapi zostało załadowane
-            if (typeof gapi === 'undefined') {
-                throw new Error('Google API library nie zostało załadowane');
-            }
-            
-            await new Promise((resolve, reject) => {
-                gapi.load('auth2:client', {
-                    callback: resolve,
-                    onerror: (error) => {
-                        console.error('Error loading gapi modules:', error);
-                        reject(error);
-                    }
-                });
-            });
-            
-            console.log('GAPI modules loaded successfully');
-            
-            await gapi.client.init({
-                apiKey: this.API_KEY,
-                clientId: this.CLIENT_ID,
-                discoveryDocs: [this.DISCOVERY_DOC],
-                scope: this.SCOPES
-            });
-            
-            console.log('GAPI client initialized successfully');
-            
-            // Sprawdź czy auth2 jest dostępne
-            const authInstance = gapi.auth2.getAuthInstance();
-            if (authInstance) {
-                console.log('Auth instance created successfully');
-            } else {
-                console.error('Failed to create auth instance');
-            }
-            
-        } catch (error) {
-            console.error('Szczegółowy błąd inicjalizacji:', error);
-            alert('Błąd inicjalizacji Google Drive API: ' + error.message);
-        }
-    }
-
-
-    // Uproszczona metoda logowania
-    async loginToGoogleDrive() {
-        if (!this.gapiInited || !this.gisInited) {
-            alert('Google API nie zostało jeszcze załadowane. Spróbuj ponownie za chwilę.');
-            return;
-        }
-
-        try {
-            // Użyj nowego Google Identity Services
-            const tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: this.CLIENT_ID,
-                scope: this.SCOPES,
-                callback: async (response) => {
-                    if (response.error) {
-                        console.error('Token error:', response.error);
-                        alert('Błąd autoryzacji: ' + response.error);
-                        return;
-                    }
-                    
-                    this.accessToken = response.access_token;
-                    this.isGoogleDriveConnected = true;
-                    
-                    // Znajdź lub utwórz folder
-                    await this.findOrCreateFolder();
-                    this.updateCloudButtons();
-                    alert('Połączono z Google Drive!');
-                },
-            });
-
-            tokenClient.requestAccessToken({ prompt: 'consent' });
-            
-        } catch (error) {
-            console.error('Login error:', error);
-            alert('Błąd logowania: ' + error.message);
-        }
-    }
-
-
-    // Znajdź lub utwórz folder DrawBoard Pro
-    async findOrCreateFolder() {
-        try {
-            // Szukaj istniejącego folderu
-            const response = await gapi.client.drive.files.list({
-                q: `name='${this.FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-                spaces: 'drive'
-            });
-            
-            if (response.result.files.length > 0) {
-                this.folderId = response.result.files[0].id;
-                console.log('Found existing folder:', this.folderId);
-            } else {
-                // Utwórz nowy folder
-                const folderResponse = await gapi.client.drive.files.create({
-                    resource: {
-                        name: this.FOLDER_NAME,
-                        mimeType: 'application/vnd.google-apps.folder'
-                    }
-                });
-                this.folderId = folderResponse.result.id;
-                console.log('Created new folder:', this.folderId);
-            }
-        } catch (error) {
-            console.error('Error managing folder:', error);
-        }
-    }
-
-    // Zapisz do Google Drive
-    async saveToGoogleDrive() {
-        if (!this.isGoogleDriveConnected || !this.folderId) {
-            alert('Najpierw połącz się z Google Drive');
-            return;
-        }
-        
-        const fileName = prompt('Nazwa pliku:', `rysunek-${new Date().toISOString().split('T')[0]}`);
-        if (!fileName) return;
-        
-        try {
-            // Generuj SVG
-            const svgContent = this.generateSVGContent();
-            
-            // Utwórz blob
-            const blob = new Blob([svgContent], { type: 'image/svg+xml' });
-            
-            // Upload do Google Drive
-            const metadata = {
-                name: fileName + '.svg',
-                parents: [this.folderId]
-            };
-            
-            const form = new FormData();
-            form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
-            form.append('file', blob);
-            
-            const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                method: 'POST',
-                headers: new Headers({ 'Authorization': `Bearer ${this.accessToken}` }),
-                body: form
-            });
-            
-            if (response.ok) {
-                alert('Plik zapisany w Google Drive!');
-            } else {
-                throw new Error('Upload failed');
-            }
-        } catch (error) {
-            console.error('Error saving to Google Drive:', error);
-            alert('Błąd zapisywania w Google Drive');
-        }
-    }
-
-    // Wczytaj z Google Drive
-    async loadFromGoogleDrive() {
-        if (!this.isGoogleDriveConnected || !this.folderId) {
-            alert('Najpierw połącz się z Google Drive');
-            return;
-        }
-        
-        try {
-            // Pobierz listę plików SVG z folderu
-            const response = await gapi.client.drive.files.list({
-                q: `'${this.folderId}' in parents and name contains '.svg' and trashed=false`,
-                orderBy: 'modifiedTime desc',
-                fields: 'files(id, name, modifiedTime)'
-            });
-            
-            const files = response.result.files;
-            if (files.length === 0) {
-                alert('Brak plików w folderze DrawBoard Pro');
-                return;
-            }
-            
-            // Utwórz listę do wyboru
-            const fileOptions = files.map((file, index) => 
-                `${index}: ${file.name} (${new Date(file.modifiedTime).toLocaleString()})`
-            ).join('\n');
-            
-            const choice = prompt(`Wybierz plik do wczytania:\n${fileOptions}\n\nWpisz numer:`);
-            const fileIndex = parseInt(choice);
-            
-            if (isNaN(fileIndex) || fileIndex < 0 || fileIndex >= files.length) {
-                alert('Nieprawidłowy wybór');
-                return;
-            }
-            
-            const selectedFile = files[fileIndex];
-            
-            // Pobierz zawartość pliku
-            const fileResponse = await gapi.client.drive.files.get({
-                fileId: selectedFile.id,
-                alt: 'media'
-            });
-            
-            // Wczytaj SVG
-            this.importSVG(fileResponse.body);
-            alert('Plik wczytany!');
-            
-        } catch (error) {
-            console.error('Error loading from Google Drive:', error);
-            alert('Błąd wczytywania z Google Drive');
-        }
-    }
-
-    // Pomocnicza metoda do generowania SVG
-    generateSVGContent() {
-        let svg = `<svg width="${this.canvas.width}" height="${this.canvas.height}" xmlns="http://www.w3.org/2000/svg">`;
-        
-        this.elements.forEach(element => {
-            switch (element.type) {
-                case 'rectangle':
-                    svg += `<rect x="${Math.min(element.startX, element.endX)}" y="${Math.min(element.startY, element.endY)}" width="${Math.abs(element.endX - element.startX)}" height="${Math.abs(element.endY - element.startY)}" fill="none" stroke="${element.color}" stroke-width="${element.strokeWidth}"/>`;
-                    break;
-                case 'circle':
-                    const centerX = (element.startX + element.endX) / 2;
-                    const centerY = (element.startY + element.endY) / 2;
-                    const radiusX = Math.abs(element.endX - element.startX) / 2;
-                    const radiusY = Math.abs(element.endY - element.startY) / 2;
-                    svg += `<ellipse cx="${centerX}" cy="${centerY}" rx="${radiusX}" ry="${radiusY}" fill="none" stroke="${element.color}" stroke-width="${element.strokeWidth}"/>`;
-                    break;
-                // ... dodaj pozostałe przypadki jak w oryginalnym exportSVG
-            }
-        });
-        
-        svg += '</svg>';
-        return svg;
-    }
-
-    // Aktualizuj stan przycisków
-    updateCloudButtons() {
-        const saveBtn = document.getElementById('saveToCloud');
-        const loadBtn = document.getElementById('loadFromCloud');
-        const loginBtn = document.getElementById('googleDriveLogin');
-        
-        if (this.isGoogleDriveConnected) {
-            saveBtn.disabled = false;
-            loadBtn.disabled = false;
-            loginBtn.textContent = '✓ Drive';
-            loginBtn.style.background = '#10b981';
-            loginBtn.style.color = 'white';
-        } else {
-            saveBtn.disabled = true;
-            loadBtn.disabled = true;
-            loginBtn.textContent = 'Drive';
-            loginBtn.style.background = '';
-            loginBtn.style.color = '';
-        }
-    }
 
 
 }
-// Globalne funkcje callback dla Google API
-window.gapiLoaded = function() {
-    if (window.drawBoardInstance) {
-        window.drawBoardInstance.gapiLoaded();
-    }
-};
-
-window.gisLoaded = function() {
-    if (window.drawBoardInstance) {
-        window.drawBoardInstance.gisLoaded();
-    }
-};
 
 // Zmień inicjalizację na:
 document.addEventListener('DOMContentLoaded', () => {

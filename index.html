@@ -13,20 +13,6 @@
         <div class="toolbar">
             <div class="separator"></div>
 
-            <!-- Google Drive Integration -->
-            <button id="googleDriveLogin" class="tool-btn export-btn" title="Połącz z Google Drive">
-                <svg width="16" height="16" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M6.28 3l5.72 9.94L18.28 3H6.28zM21 14.66L18.28 19H9.72L12 14.66H21zM3 14.66L5.72 19h4.56L7 14.66H3z"/>
-                </svg>
-                Drive
-            </button>
-            <button id="saveToCloud" class="tool-btn export-btn" title="Zapisz w chmurze" disabled>
-                Zapisz ☁️
-            </button>
-            <button id="loadFromCloud" class="tool-btn export-btn" title="Wczytaj z chmury" disabled>
-                Wczytaj ☁️
-            </button>
-
             <button id="rectangleTool" class="tool-btn active" data-tool="rectangle" title="Prostokąt">
                 <svg width="20" height="20" viewBox="0 0 20 20">
                     <rect x="2" y="2" width="16" height="12" fill="none" stroke="currentColor" stroke-width="2" />
@@ -152,8 +138,6 @@
     </div>
 
     <script src="script.js"></script>
-    <script src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-    <script src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 
 </body>
 
